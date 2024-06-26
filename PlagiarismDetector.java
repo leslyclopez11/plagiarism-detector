@@ -24,23 +24,41 @@ public class PlagiarismDetector {
 	public static Map<String, Integer> detectPlagiarism(String dirName, int windowSize, int threshold) {
 		File dirFile = new File(dirName);
 		String[] files = dirFile.list();
-		if (files == null) throw new IllegalArgumentException();
+		if (files == null) {
+			throw new IllegalArgumentException();
+		}
 		
 		Map<String, Integer> numberOfMatches = new HashMap<String, Integer>();
+		Map<String, Set<String>> fileMap = new HashMap<>();
+		//add to map 
+		for (String eachfile : files) {
+			fileMap.put(eachfile, createPhrases(dirName + "/" + eachfile, windowSize));
+		}
 		
+		int length = files.length;
 		// compare each file to all other files
-		for (int i = 0; i < files.length; i++) {
+		for (int i = 0; i < length; i++) {
 			String file1 = files[i];
-
-			for (int j = 0; j < files.length; j++) { 
+			//create phrase for file 1
+			Set<String> file1Phrases = fileMap.get(file1); 
+			
+			//check for null
+			if (file1Phrases == null) {
+				return null;
+			}
+				
+			
+			for (int j = i+1; j < length; j++) { 
 				String file2 = files[j];
 
-				// create phrases for each file
-				Set<String> file1Phrases = createPhrases(dirName + "/" + file1, windowSize); 
-				Set<String> file2Phrases = createPhrases(dirName + "/" + file2, windowSize); 
+				// create phrase for file 2
 				
-				if (file1Phrases == null || file2Phrases == null)
+				Set<String> file2Phrases = fileMap.get(file2); 
+				
+				if (file2Phrases == null) {
 					return null;
+				}
+					
 				
 				// find matching phrases in each Set
 				Set<String> matches = findMatches(file1Phrases, file2Phrases);
@@ -51,9 +69,8 @@ public class PlagiarismDetector {
 				// if the number of matches exceeds the threshold, add it to the Map
 				if (matches.size() > threshold) {
 					String key = file1 + "-" + file2;
-					if (numberOfMatches.containsKey(file2 + "-" + file1) == false && file1.equals(file2) == false) {
-						numberOfMatches.put(key,matches.size());
-					}
+					numberOfMatches.put(key,matches.size());
+					
 				}				
 			}
 			
@@ -69,7 +86,9 @@ public class PlagiarismDetector {
 	 * It excludes punctuation and converts all words in the file to uppercase.
 	 */
 	private static List<String> readFile(String filename) {
-		if (filename == null) return null;
+		if (filename == null) {
+			return null;
+		}
 		
 		List<String> words = new ArrayList<String>();
 		
@@ -78,9 +97,10 @@ public class PlagiarismDetector {
 			String line;
 			while ((line = in.readLine())  != null) {
 				String[] tokens = line.split(" ");
-				for (String token : tokens) { 
+				for (String token : tokens) {
 					// this strips punctuation and converts to uppercase
 					words.add(token.replaceAll("[^a-zA-Z]", "").toUpperCase()); 
+
 				}
 			}
 		}
@@ -100,7 +120,9 @@ public class PlagiarismDetector {
 		// read the file
 		List<String> words = readFile(filename);
 		
-		if (window < 1) return null;
+		if (window < 1) {
+			return null;
+		}
 		
 		Set<String> phrases = new HashSet<String>();
 		
@@ -111,8 +133,9 @@ public class PlagiarismDetector {
 				phrase += words.get(i+j) + " ";
 			}
 
-			if (phrases.contains(phrase) == false)
+			if (!phrases.contains(phrase)) {
 				phrases.add(phrase);
+			}
 
 		}
 		
@@ -126,17 +149,22 @@ public class PlagiarismDetector {
 	 * However, the comparison is case-insensitive.
 	 */
 	private static Set<String> findMatches(Set<String> myPhrases, Set<String> yourPhrases) {
-	
+		
+		//check for null
+		if (myPhrases == null || yourPhrases == null) {
+			return null;
+		}
+		
+		Set<String> myPhrasesL = new HashSet<String>();
+		
+		for (String phrase: myPhrases) {
+			myPhrasesL.add(phrase.toLowerCase());
+		}
 		Set<String> matches = new HashSet<String>();
 		
-		if (myPhrases != null && yourPhrases != null) {
-		
-			for (String mine : myPhrases) {
-				for (String yours : yourPhrases) {
-					if (mine.equalsIgnoreCase(yours)) {
-						matches.add(mine);
-					}
-				}
+		for (String phrase: yourPhrases) {
+			if (myPhrasesL.contains(phrase.toLowerCase())){
+				matches.add(phrase);
 			}
 		}
 		

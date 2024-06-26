@@ -16,7 +16,7 @@ public class PlagiarismDetectorTest {
 
 	@Test
 	public void test() {
-    	String directory = "docs";
+    	String directory = "C:\\Users\\Lesly\\CIS730\\homework\\homework_5\\plagiarism-detector\\docs";
 
     	Map<String, Integer> map = null;
 
